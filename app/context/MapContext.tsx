@@ -32,7 +32,7 @@ export const MapProvider = ({ children }: { children: ReactNode }) => {
             cacheSize: 1024,
             extent: maxExtent,
             source: new XYZ({
-              url: 'https://tiles.map.lamangintel.net/v2/{z}/{x}/{y}',
+              url: 'https://tiles.lamangintel.net/v2/{z}/{x}/{y}',
               tileGrid: createXYZ({
                 maxZoom: 6,
                 minZoom: 1,
