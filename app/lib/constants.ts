@@ -1,1 +1,1 @@
-export const API_URL = 'https://api.map.lamangintel.net';
+export const API_URL = 'https://api.lamangintel.net';
