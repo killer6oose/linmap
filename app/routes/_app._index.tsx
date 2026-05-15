@@ -7,6 +7,7 @@ import { Popup } from "~/components/map/Popup";
 import { AppSidebarTrigger } from "~/components/sidebar/app-sidebar-trigger";
 import { useSidebar } from "~/components/ui/sidebar";
 import { useData } from "~/context/DataContext";
+import { useMapFilters } from "~/context/MapFiltersContext";
 import { AppSidebar } from "~/components/sidebar/app-sidebar";
 import { KeyMarker } from "~/components/markers/key-marker";
 import { GridOverlay } from "~/components/map/Grid";
@@ -21,6 +22,7 @@ export const meta: MetaFunction = () => {
 export default function Index() {
   const { isMobile } = useSidebar();
   const { tasks, keys, lzs, locations } = useData();
+  const { filters } = useMapFilters();
 
   return (
     <div className="relative flex w-full items-center justify-center">
@@ -30,16 +32,16 @@ export default function Index() {
       <Map />
       <GridOverlay />
       <Popup />
-      {tasks.map((task) => task.objectives.map((objective, index) => (
+      {filters.objectives && tasks.map((task) => task.objectives.map((objective, index) => (
         <ObjectiveMarker key={index} task={task} objective={objective} />
       )))}
-      {keys.map((key, index) => (
+      {filters.keys && keys.map((key, index) => (
         <KeyMarker key={index} cKey={key} />
       ))}
-      {lzs.map((lz, index) => (
+      {filters.lzs && lzs.map((lz, index) => (
         <LZMarker key={index} lz={lz} />
       ))}
-      {locations.map((location, index) => (
+      {filters.locations && locations.map((location, index) => (
         <LocationMarker key={index} location={location} />
       ))}
       {isMobile && (

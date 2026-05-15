@@ -1,5 +1,5 @@
 import { createContext, ReactNode, useContext, useState } from "react";
-import { faction, item, key, location, lz, objective, task } from "~/lib/types";
+import { faction, item, key, KeySpawnMarker, location, lz, objective, task } from "~/lib/types";
 
 interface DataProps {
   tasks: task[];
@@ -9,6 +9,7 @@ interface DataProps {
   factions: faction[];
   items: item[];
   keys: key[];
+  keySpawns: KeySpawnMarker[];
 }
 
 interface DataContextType extends DataProps {

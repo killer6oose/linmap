@@ -168,3 +168,10 @@ export enum KeyTypes {
   SKINNYGOLDKEY = "/items/keys/key-gold-skinny.png",
   BLUETHICKKEY = "/items/keys/key-blue-thick.png",
 }
+
+export type KeySpawnMarker = {
+  id: number;
+  name: string;
+  icon: string;
+  position: [number, number];
+};

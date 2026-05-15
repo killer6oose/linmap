@@ -4,7 +4,8 @@ import { MapProvider } from "~/context/MapContext";
 import { useState } from "react";
 import { PopupProvider } from "~/context/PopupContext";
 import { DataProvider } from "~/context/DataContext";
-import { faction, item, key, location, lz, objective, task } from "~/lib/types";
+import { MapFiltersProvider } from "~/context/MapFiltersContext";
+import { faction, item, key, KeySpawnMarker, location, lz, objective, task } from "~/lib/types";
 import { fetchData } from "~/lib/utils";
 
 export async function loader() {
@@ -16,6 +17,7 @@ export async function loader() {
     factionsData,
     itemsData,
     keysData,
+    keySpawnsData,
   ] = await Promise.all([
     fetchData<task>('tasks'),
     fetchData<objective>('objectives'),
@@ -24,6 +26,7 @@ export async function loader() {
     fetchData<faction>('factions'),
     fetchData<item>('items'),
     fetchData<key>('keys'),
+    fetchData<KeySpawnMarker>('key-spawns'),
   ]);
   return { loaderData: {
     tasks: tasksData,
@@ -33,6 +36,7 @@ export async function loader() {
     factions: factionsData,
     items: itemsData,
     keys: keysData,
+    keySpawns: keySpawnsData,
   }};
 }
 
@@ -42,6 +46,7 @@ export default function AppLayout() {
 
   return (
     <DataProvider data={loaderData} loaded>
+    <MapFiltersProvider>
     <MapProvider>
     <PopupProvider>
     <SidebarProvider open={open} onOpenChange={setOpen} className="bg-transparent">
@@ -53,6 +58,7 @@ export default function AppLayout() {
     </SidebarProvider>
     </PopupProvider>
     </MapProvider>
+    </MapFiltersProvider>
     </DataProvider>
   )
 }
