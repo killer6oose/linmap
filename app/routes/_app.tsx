@@ -5,7 +5,11 @@ import { useState } from "react";
 import { PopupProvider } from "~/context/PopupContext";
 import { DataProvider } from "~/context/DataContext";
 import { MapFiltersProvider } from "~/context/MapFiltersContext";
-import { faction, item, key, KeySpawnMarker, location, lz, objective, task } from "~/lib/types";
+import {
+  cacheMarker, containerGroup, cop, doorMarker, easterEgg,
+  faction, intelMarker, item, key, KeySpawnMarker, location,
+  lz, objective, operationBase, subPoi, task
+} from "~/lib/types";
 import { fetchData } from "~/lib/utils";
 
 export async function loader() {
@@ -18,6 +22,14 @@ export async function loader() {
     itemsData,
     keysData,
     keySpawnsData,
+    copsData,
+    subPoisData,
+    easterEggsData,
+    operationBasesData,
+    containersData,
+    cachesData,
+    doorsData,
+    intelData,
   ] = await Promise.all([
     fetchData<task>('tasks'),
     fetchData<objective>('objectives'),
@@ -27,6 +39,14 @@ export async function loader() {
     fetchData<item>('items'),
     fetchData<key>('keys'),
     fetchData<KeySpawnMarker>('key-spawns'),
+    fetchData<cop>('cops'),
+    fetchData<subPoi>('sub-pois'),
+    fetchData<easterEgg>('easter-eggs'),
+    fetchData<operationBase>('operation-bases'),
+    fetchData<containerGroup>('containers'),
+    fetchData<cacheMarker>('caches'),
+    fetchData<doorMarker>('doors'),
+    fetchData<intelMarker>('intel'),
   ]);
   return { loaderData: {
     tasks: tasksData,
@@ -37,6 +57,14 @@ export async function loader() {
     items: itemsData,
     keys: keysData,
     keySpawns: keySpawnsData,
+    cops: copsData,
+    subPois: subPoisData,
+    easterEggs: easterEggsData,
+    operationBases: operationBasesData,
+    containers: containersData,
+    caches: cachesData,
+    doors: doorsData,
+    intel: intelData,
   }};
 }
 

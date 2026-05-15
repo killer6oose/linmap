@@ -30,6 +30,14 @@ import {
   EyeOff,
   Ghost,
   ChevronRight,
+  ChevronDown,
+  Shield,
+  Egg,
+  DoorOpen,
+  Code,
+  FileText,
+  Package,
+  Boxes,
 } from "lucide-react";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "../ui/hover-card";
 import { KBInput, Keybind } from "../common/Keybind";
@@ -73,18 +81,19 @@ const VENDOR_CONFIG: Record<string, { icon: React.ElementType; color: string }> 
   'Banshee':   { icon: Ghost, color: 'text-cyan-400' },
 };
 
-const FILTER_ITEMS: { key: keyof MapFilters; label: string; icon: React.ElementType }[] = [
-  { key: 'lzs',        label: 'Landing Zones',   icon: MapPin },
-  { key: 'objectives', label: 'Task Objectives',  icon: Target },
-  { key: 'keys',       label: 'Keys',             icon: Key },
-  { key: 'locations',  label: 'Locations',        icon: Map },
-];
-
 function getKeySpawns(k: key, keySpawns: KeySpawnMarker[]): KeySpawnMarker[] {
   const keyNameLower = k.name.toLowerCase();
   return keySpawns.filter(spawn =>
     spawn.name.toLowerCase().startsWith(keyNameLower)
   );
+}
+
+function locationsCheckedState(filters: MapFilters): boolean | 'indeterminate' {
+  const subs = [filters.locationPois, filters.locationCops, filters.locationSubPois];
+  const on = subs.filter(Boolean).length;
+  if (on === 0) return false;
+  if (on === subs.length) return true;
+  return 'indeterminate';
 }
 
 export function AppSidebar() {
@@ -93,7 +102,7 @@ export function AppSidebar() {
   const { data, actions } = useLocalStorage();
   const { showPopup } = usePopup();
   const { tasks, locations, keys, lzs, keySpawns, loaded } = useData();
-  const { filters, setFilter } = useMapFilters();
+  const { filters, setFilter, setLocationGroup } = useMapFilters();
 
   const [activeTab, setActiveTab] = useState<SidebarTab>('home');
   const [searchCategory, setSearchCategory] = useState("tasks");
@@ -101,6 +110,7 @@ export function AppSidebar() {
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
   const [suggestions, setSuggestions] = useState<lz[] | task[] | key[]>([]);
   const [expandedTask, setExpandedTask] = useState<task | null>(null);
+  const [locationsOpen, setLocationsOpen] = useState(false);
 
   const handleObjectiveClick = (task: task, objective: objective) => {
     if (!map) return;
@@ -180,8 +190,15 @@ export function AppSidebar() {
   }, {});
 
   const vendorOrder = ['Handshake', 'Gunny', 'Lab Rat', 'Artisan', 'Turncoat', 'Banshee'];
-
   const tabs: SidebarTab[] = ['home', 'tasks', 'keys'];
+
+  const locMasterState = locationsCheckedState(filters);
+
+  const locationSubFilters: { key: keyof MapFilters; label: string }[] = [
+    { key: 'locationPois', label: 'POIs' },
+    { key: 'locationCops', label: 'COPs' },
+    { key: 'locationSubPois', label: 'Sub POIs' },
+  ];
 
   return (
     <Sidebar className="grid-bg p-2">
@@ -205,7 +222,6 @@ export function AppSidebar() {
           </div>
         </SidebarMenu>
 
-        {/* Tab navigation */}
         <div className="flex border-b border-border mt-1">
           {tabs.map(tab => (
             <button
@@ -225,11 +241,9 @@ export function AppSidebar() {
 
       <SidebarContent className="bg-transparent py-2">
 
-        {/* HOME TAB */}
         {activeTab === 'home' && loaded && (
           <div className="flex flex-col gap-3 px-1">
 
-            {/* Search */}
             <div className="relative">
               <Input
                 type="text"
@@ -242,13 +256,7 @@ export function AppSidebar() {
                 className="h-10 pr-24"
               />
               <div className="absolute inset-y-0 right-24 h-10 flex items-center">
-                <button
-                  onClick={() => {
-                    setSearchQuery("");
-                    setExpandedTask(null);
-                    setIsSuggestionsOpen(false);
-                  }}
-                >
+                <button onClick={() => { setSearchQuery(""); setExpandedTask(null); setIsSuggestionsOpen(false); }}>
                   <div className="hover:bg-primary/10 p-1">
                     <X className="w-4 h-4 text-muted-foreground" />
                   </div>
@@ -257,10 +265,7 @@ export function AppSidebar() {
               <div className="absolute inset-y-0 right-0 w-24 h-10">
                 <Select
                   value={searchCategory}
-                  onValueChange={(value: SetStateAction<string>) => {
-                    setSearchCategory(value);
-                    setExpandedTask(null);
-                  }}
+                  onValueChange={(value: SetStateAction<string>) => { setSearchCategory(value); setExpandedTask(null); }}
                 >
                   <SelectTrigger className="h-full border-none focus:ring-0">
                     <SelectValue placeholder="Type" />
@@ -287,42 +292,16 @@ export function AppSidebar() {
                           const factionObjectives = filterByFaction(item.objectives, data.user.faction);
                           if (factionObjectives.length === 1) {
                             return (
-                              <SingleObjectiveTask
-                                key={index}
-                                task={item}
-                                objective={factionObjectives[0]}
-                                onClick={() => handleObjectiveClick(item, factionObjectives[0])}
-                              />
+                              <SingleObjectiveTask key={index} task={item} objective={factionObjectives[0]} onClick={() => handleObjectiveClick(item, factionObjectives[0])} />
                             );
                           }
                           return (
-                            <MultipleObjectiveTask
-                              key={index}
-                              task={item}
-                              objectives={factionObjectives}
-                              expandedTask={expandedTask}
-                              onExpand={() => setExpandedTask(expandedTask?.name === item.name ? null : item)}
-                              onClick={(obj) => handleObjectiveClick(item, obj)}
-                            />
+                            <MultipleObjectiveTask key={index} task={item} objectives={factionObjectives} expandedTask={expandedTask} onExpand={() => setExpandedTask(expandedTask?.name === item.name ? null : item)} onClick={(obj) => handleObjectiveClick(item, obj)} />
                           );
                         } else if (searchCategory === "keys" && "size" in item) {
-                          return (
-                            <KeyItem
-                              key={index}
-                              keyItem={item}
-                              faction={data.user.faction}
-                              onClick={() => handleKeyClick(item)}
-                            />
-                          );
+                          return <KeyItem key={index} keyItem={item} faction={data.user.faction} onClick={() => handleKeyClick(item)} />;
                         } else if (searchCategory === "lzs" && "discoverable" in item) {
-                          return (
-                            <LZItem
-                              key={index}
-                              lz={item}
-                              faction={data.user.faction}
-                              onClick={() => handleLZClick(item)}
-                            />
-                          );
+                          return <LZItem key={index} lz={item} faction={data.user.faction} onClick={() => handleLZClick(item)} />;
                         }
                         return null;
                       })}
@@ -334,31 +313,117 @@ export function AppSidebar() {
               </div>
             </div>
 
-            {/* GENERAL filters */}
             <div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">General</p>
               <div className="flex flex-col gap-1">
-                {FILTER_ITEMS.map(({ key: fkey, label, icon: Icon }) => (
-                  <label
-                    key={fkey}
-                    className="flex items-center gap-2.5 px-1 py-1 rounded hover:bg-white/5 cursor-pointer select-none"
-                  >
+                <label className="flex items-center gap-2.5 px-1 py-1 rounded hover:bg-white/5 cursor-pointer select-none">
+                  <Checkbox checked={filters.lzs} onCheckedChange={(c) => setFilter('lzs', !!c)} className="pointer-events-none" />
+                  <MapPin className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-sm">Landing Zones</span>
+                </label>
+                <label className="flex items-center gap-2.5 px-1 py-1 rounded hover:bg-white/5 cursor-pointer select-none">
+                  <Checkbox checked={filters.objectives} onCheckedChange={(c) => setFilter('objectives', !!c)} className="pointer-events-none" />
+                  <Target className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-sm">Task Objectives</span>
+                </label>
+                <label className="flex items-center gap-2.5 px-1 py-1 rounded hover:bg-white/5 cursor-pointer select-none">
+                  <Checkbox checked={filters.keys} onCheckedChange={(c) => setFilter('keys', !!c)} className="pointer-events-none" />
+                  <Key className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-sm">Keys</span>
+                </label>
+                <label className="flex items-center gap-2.5 px-1 py-1 rounded hover:bg-white/5 cursor-pointer select-none">
+                  <Checkbox checked={filters.operationBases} onCheckedChange={(c) => setFilter('operationBases', !!c)} className="pointer-events-none" />
+                  <Shield className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-sm">Operation Bases</span>
+                </label>
+                <label className="flex items-center gap-2.5 px-1 py-1 rounded hover:bg-white/5 cursor-pointer select-none">
+                  <Checkbox checked={filters.easterEggs} onCheckedChange={(c) => setFilter('easterEggs', !!c)} className="pointer-events-none" />
+                  <Egg className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-sm">Easter Eggs</span>
+                </label>
+                <div>
+                  <div className="flex items-center gap-1 px-1 py-1 rounded hover:bg-white/5">
                     <Checkbox
-                      checked={filters[fkey]}
-                      onCheckedChange={(checked) => setFilter(fkey, !!checked)}
-                      className="pointer-events-none"
+                      checked={locMasterState === true}
+                      data-state={locMasterState === 'indeterminate' ? 'indeterminate' : undefined}
+                      onCheckedChange={(c) => setLocationGroup(!!c)}
+                      className="pointer-events-auto"
                     />
-                    <Icon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                    <span className="text-sm">{label}</span>
-                  </label>
-                ))}
+                    <button
+                      className="flex items-center gap-2 flex-1 select-none"
+                      onClick={() => setLocationsOpen(o => !o)}
+                    >
+                      <Map className="w-3.5 h-3.5 text-muted-foreground shrink-0 ml-0.5" />
+                      <span className="text-sm">Locations</span>
+                      <span className="ml-auto">
+                        {locationsOpen
+                          ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+                          : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+                        }
+                      </span>
+                    </button>
+                  </div>
+                  {locationsOpen && (
+                    <div className="ml-6 mt-0.5 flex flex-col gap-0.5 border-l border-border/50 pl-2">
+                      {locationSubFilters.map(({ key: fkey, label }) => (
+                        <label
+                          key={fkey}
+                          className="flex items-center gap-2 px-1 py-1 rounded hover:bg-white/5 cursor-pointer select-none"
+                        >
+                          <Checkbox
+                            checked={filters[fkey]}
+                            onCheckedChange={(c) => setFilter(fkey, !!c)}
+                            className="pointer-events-none"
+                          />
+                          <span className="text-xs">{label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Doors & Intel</p>
+              <div className="flex flex-col gap-1">
+                <label className="flex items-center gap-2.5 px-1 py-1 rounded hover:bg-white/5 cursor-pointer select-none">
+                  <Checkbox checked={filters.lockedDoors} onCheckedChange={(c) => setFilter('lockedDoors', !!c)} className="pointer-events-none" />
+                  <DoorOpen className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-sm">Locked Doors</span>
+                </label>
+                <label className="flex items-center gap-2.5 px-1 py-1 rounded hover:bg-white/5 cursor-pointer select-none">
+                  <Checkbox checked={filters.codedDoors} onCheckedChange={(c) => setFilter('codedDoors', !!c)} className="pointer-events-none" />
+                  <Code className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-sm">Coded Doors</span>
+                </label>
+                <label className="flex items-center gap-2.5 px-1 py-1 rounded hover:bg-white/5 cursor-pointer select-none">
+                  <Checkbox checked={filters.intel} onCheckedChange={(c) => setFilter('intel', !!c)} className="pointer-events-none" />
+                  <FileText className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-sm">Intel</span>
+                </label>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Loot</p>
+              <div className="flex flex-col gap-1">
+                <label className="flex items-center gap-2.5 px-1 py-1 rounded hover:bg-white/5 cursor-pointer select-none">
+                  <Checkbox checked={filters.containers} onCheckedChange={(c) => setFilter('containers', !!c)} className="pointer-events-none" />
+                  <Boxes className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-sm">Containers</span>
+                </label>
+                <label className="flex items-center gap-2.5 px-1 py-1 rounded hover:bg-white/5 cursor-pointer select-none">
+                  <Checkbox checked={filters.caches} onCheckedChange={(c) => setFilter('caches', !!c)} className="pointer-events-none" />
+                  <Package className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-sm">Buried Caches</span>
+                </label>
               </div>
             </div>
 
           </div>
         )}
 
-        {/* TASKS TAB */}
         {activeTab === 'tasks' && loaded && (
           <SidebarMenu>
             {vendorOrder.map(vendorName => {
@@ -392,10 +457,7 @@ export function AppSidebar() {
                           return (
                             <SidebarMenuSub key={idx}>
                               <SidebarMenuSubItem>
-                                <SidebarMenuButton
-                                  onClick={() => handleObjectiveClick(t, factionObjectives[0])}
-                                  className="text-xs"
-                                >
+                                <SidebarMenuButton onClick={() => handleObjectiveClick(t, factionObjectives[0])} className="text-xs">
                                   {t.name}
                                 </SidebarMenuButton>
                               </SidebarMenuSubItem>
@@ -418,10 +480,7 @@ export function AppSidebar() {
                                   {factionObjectives.map((obj, oIdx) => (
                                     <SidebarMenuSub key={oIdx}>
                                       <SidebarMenuSubItem>
-                                        <SidebarMenuButton
-                                          onClick={() => handleObjectiveClick(t, obj)}
-                                          className="text-xs"
-                                        >
+                                        <SidebarMenuButton onClick={() => handleObjectiveClick(t, obj)} className="text-xs">
                                           {obj.name}
                                         </SidebarMenuButton>
                                       </SidebarMenuSubItem>
@@ -441,7 +500,6 @@ export function AppSidebar() {
           </SidebarMenu>
         )}
 
-        {/* KEYS TAB */}
         {activeTab === 'keys' && loaded && (
           <SidebarMenu>
             {locations.map((location, idx) => {
@@ -486,11 +544,8 @@ export function AppSidebar() {
                                   className="pointer-events-auto shrink-0"
                                   checked={data.user.collectedKeys.includes(k.id)}
                                   onCheckedChange={(checked) => {
-                                    if (checked) {
-                                      actions.user.addCollectedKey(k.id);
-                                    } else {
-                                      actions.user.removeCollectedKey(k.id);
-                                    }
+                                    if (checked) { actions.user.addCollectedKey(k.id); }
+                                    else { actions.user.removeCollectedKey(k.id); }
                                   }}
                                 />
                               </div>
@@ -537,18 +592,9 @@ export function AppSidebar() {
         </div>
         <div className="flex flex-col space-y-1 text-muted-foreground/90 px-1.5">
           {[
-            {
-              label: "Objectives Completed",
-              value: `${completedObjectives().toString().padStart(3, '0')} / ${totalObjectives().toString().padStart(3, '0')}`,
-            },
-            {
-              label: "Tasks Completed",
-              value: `${completedTasks().toString().padStart(3, '0')} / ${totalTasks().toString().padStart(3, '0')}`,
-            },
-            {
-              label: "LZs Discovered",
-              value: `${discoveredLZs().toString().padStart(3, '0')} / ${totalLZs().toString().padStart(3, '0')}`,
-            },
+            { label: "Objectives Completed", value: completedObjectives().toString().padStart(3,'0') + " / " + totalObjectives().toString().padStart(3,'0') },
+            { label: "Tasks Completed", value: completedTasks().toString().padStart(3,'0') + " / " + totalTasks().toString().padStart(3,'0') },
+            { label: "LZs Discovered", value: discoveredLZs().toString().padStart(3,'0') + " / " + totalLZs().toString().padStart(3,'0') },
           ].map(({ label, value }) => (
             <div key={label} className="flex items-end justify-between">
               <span className="text-xs font-mono">{label}</span>
@@ -560,18 +606,8 @@ export function AppSidebar() {
         <div className="flex flex-row items-center space-x-2">
           <div className="w-full h-[1px] bg-border" />
           <div className="flex w-full flex-row justify-around items-center space-x-2 text-[10px] text-border">
-            <Link
-              to="https://github.com/killer6oose/linmap"
-              className="duration-300 transition-colors hover:text-muted-foreground"
-            >
-              Github
-            </Link>
-            <Link
-              to="/about"
-              className="duration-300 transition-colors hover:text-muted-foreground"
-            >
-              Updates
-            </Link>
+            <Link to="https://github.com/killer6oose/linmap" className="duration-300 transition-colors hover:text-muted-foreground">Github</Link>
+            <Link to="/about" className="duration-300 transition-colors hover:text-muted-foreground">Updates</Link>
           </div>
           <div className="w-full h-[1px] bg-border" />
         </div>

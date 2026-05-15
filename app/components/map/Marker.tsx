@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Overlay } from "ol";
 import { createPortal } from "react-dom";
 import { useMap } from "~/context/MapContext";
@@ -17,22 +17,29 @@ const MarkerComponent = ({ position, hide = false, children, enableHoverEffect =
   const { data } = useLocalStorage();
   const markerRef = useRef<HTMLDivElement | null>(null);
   const overlayRef = useRef<Overlay | null>(null);
+  // Force a re-render after the marker element is created so the portal renders
+  const [, forceUpdate] = useState(0);
 
   useEffect(() => {
     if (!map) {
       return;
     }
 
-    if (hide && overlayRef.current) {
-      overlayRef.current.setPosition(undefined);
-      map.removeOverlay(overlayRef.current);
-      overlayRef.current = null;
+    if (hide) {
+      if (overlayRef.current) {
+        overlayRef.current.setPosition(undefined);
+        map.removeOverlay(overlayRef.current);
+        overlayRef.current = null;
+      }
       return;
     }
+
+    let needsUpdate = false;
 
     if (!markerRef.current) {
       markerRef.current = document.createElement("div");
       markerRef.current.style.userSelect = "none";
+      needsUpdate = true;
     }
 
     if (!overlayRef.current) {
@@ -48,6 +55,11 @@ const MarkerComponent = ({ position, hide = false, children, enableHoverEffect =
       overlayRef.current.setPosition(position);
     }
 
+    // Trigger a re-render so the portal can mount into the new element
+    if (needsUpdate) {
+      forceUpdate(n => n + 1);
+    }
+
     return () => {
       if (overlayRef.current) {
         map.removeOverlay(overlayRef.current);
@@ -61,7 +73,7 @@ const MarkerComponent = ({ position, hide = false, children, enableHoverEffect =
       <div
         onMouseEnter={enableHoverEffect ? () => (markerRef.current!.parentElement!.style.zIndex = "1000") : undefined}
         onMouseLeave={enableHoverEffect ? () => (markerRef.current!.parentElement!.style.zIndex = "0") : undefined}
-        onContextMenu={(e) => {e.preventDefault()}}
+        onContextMenu={(e) => { e.preventDefault() }}
         className={markerSizes(data.user.settings.markerSize)}
       >
         {children}

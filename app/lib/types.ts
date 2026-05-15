@@ -175,3 +175,60 @@ export type KeySpawnMarker = {
   icon: string;
   position: [number, number];
 };
+
+
+export type cop = {
+  id: number;
+  name: string;
+  level: 1 | 2 | 3;
+  poi: string;
+  position: [number, number];
+};
+
+export type subPoi = {
+  id: number;
+  name: string;
+  poi: string;
+  position: [number, number];
+};
+
+export type easterEgg = {
+  id: number;
+  name: string;
+  poi: string;
+  position: [number, number];
+};
+
+export type operationBase = {
+  id: number;
+  name: string;
+  faction: string;
+  poi: string;
+  position: [number, number];
+};
+
+export type containerGroup = {
+  groupId: number;
+  name: string;
+  icon: string;
+  positions: [number, number][];
+};
+
+export type cacheMarker = {
+  id: number;
+  icon: string;
+  position: [number, number];
+};
+
+export type doorMarker = {
+  id: number;
+  name: string;
+  type: 'key' | 'code';
+  position: [number, number];
+};
+
+export type intelMarker = {
+  id: number;
+  name: string;
+  position: [number, number];
+};

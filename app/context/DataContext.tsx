@@ -1,5 +1,9 @@
 import { createContext, ReactNode, useContext, useState } from "react";
-import { faction, item, key, KeySpawnMarker, location, lz, objective, task } from "~/lib/types";
+import {
+  cacheMarker, containerGroup, cop, doorMarker, easterEgg,
+  faction, intelMarker, item, key, KeySpawnMarker, location,
+  lz, objective, operationBase, subPoi, task
+} from "~/lib/types";
 
 interface DataProps {
   tasks: task[];
@@ -10,6 +14,14 @@ interface DataProps {
   items: item[];
   keys: key[];
   keySpawns: KeySpawnMarker[];
+  cops: cop[];
+  subPois: subPoi[];
+  easterEggs: easterEgg[];
+  operationBases: operationBase[];
+  containers: containerGroup[];
+  caches: cacheMarker[];
+  doors: doorMarker[];
+  intel: intelMarker[];
 }
 
 interface DataContextType extends DataProps {
